@@ -21,8 +21,13 @@ public class QuerydslBasicTest {
     @Autowired
     EntityManager em;
 
+    JPAQueryFactory queryFactory; //필드 레벨로 가져가도 괜찮음(권장). 동시성 문제 고려 안해도됨, 스프링 환경에서 멀티스레드에 문제 없이 동작하도록 설계 되어있음
+
     @BeforeEach
     public void before() {
+        queryFactory = new JPAQueryFactory(em);
+
+
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
         em.persist(teamA);
@@ -52,7 +57,6 @@ public class QuerydslBasicTest {
 
     @Test
     public void startQuerydsl() {
-        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
         QMember m = new QMember("m");
 
         Member findMember = queryFactory
