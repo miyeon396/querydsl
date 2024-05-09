@@ -645,11 +645,73 @@ public class QuerydslBasicTest {
         return ageCond != null ? member.age.eq(ageCond) : null;
     }
 
-    private BooleanExpression allEq(String usernameCond, Integer ageCond) {
+    private BooleanExpression allEq(String usernameCond, Integer ageCond) { //ex) isServicable
         return usernameEq(usernameCond).and(ageEq(ageCond));
     }
 
     //장점 조립이 가능하다.
+
+    @Test
+    public void bulkupdate() {
+        //1.벌크전디비/영속성상태
+        //member1 = 10 -> member1
+        //member2 = 20 -> member2
+        //member3 = 30 -> member3
+        //member4 = 40 -> member4
+
+        //2.
+        //이 위의 친구들은 영속성 컨텍스트에 올라가있다. 영속성컨텍스트에는 member1234로 남아있고 DB에는 비회원/유지 일케 바뀌어있따.
+
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        //3.
+        //벌크연산은 영속성 켄텍스트를 무시하고 바로 쿼리가 나가버린다.
+
+
+        //7. 해결법
+        //아래설명들에대한 최종결론 -> 벌크연산이 나가면 이미 영속성 컨텍스트와 디비 값이 안맞기때문에 영속성컨텍트 초기화
+        em.flush();
+        em.clear();
+        //8. 옵션
+        //springdatajpa는 옵션이있다. @Modifying(clearAutomatically = true)
+
+        //4. 벌크후디비상태
+        //member1 = 10 -> 비회원
+        //member2 = 20 -> 비회원
+        //member3 = 30 -> member3
+        //member4 = 40 -> member4
+
+
+        //5. -> 디비와 영속성 컨텍스트의 상태가 안맞아버림
+        List<Member> result = queryFactory.selectFrom(member)
+                .fetch();
+
+        //6.
+        for (Member member : result) {
+            //DB에서 쿼리는 제대로 나갓지만 전략이 영속성 컨텍스트가 항상 우선이라 디비 조회햇더라도 영속성 컨텍스트에 있다면 그값을 가져옴
+            System.out.println("member = " + member);
+        }
+    }
+
+    @Test
+    public void buldAdd() {
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1)) //곱하기 multiply
+                .execute();
+    }
+
+    @Test
+    public void bulkDelete() {
+        long count = queryFactory
+                .delete(member)
+                .where(member.age.gt(18))
+                .execute();
+    }
 
 
 }
