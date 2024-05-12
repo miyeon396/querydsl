@@ -7,6 +7,7 @@ import lombok.*;
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of = {"id", "username", "age"})
+@EqualsAndHashCode
 public class Member {
 
     @Id @GeneratedValue
