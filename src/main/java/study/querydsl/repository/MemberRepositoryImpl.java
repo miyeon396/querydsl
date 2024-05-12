@@ -2,14 +2,17 @@ package study.querydsl.repository;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.support.PageableExecutionUtils;
 import study.querydsl.dto.MemberSearchCondition;
 import study.querydsl.dto.MemberTeamDto;
 import study.querydsl.dto.QMemberTeamDto;
+import study.querydsl.entity.Member;
 
 import java.util.List;
 
@@ -113,7 +116,8 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
 
         int fetchSizeCheck = content.size();
 
-        long total = queryFactory
+        //countQuery
+        JPAQuery<Member> countQuery = queryFactory
                 .select(member)
                 .from(member)
                 .leftJoin(member.team, team)
@@ -122,9 +126,12 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),
                         ageLoe(condition.getAgeLoe())
-                )
-                .fetchCount();//Deprecated네 얘도 .. 걍 fetch.size를 쓰라는듯.
+                );
+                //Deprecated네 얘도 .. 걍 fetch.size를 쓰라는듯.
 
-        return new PageImpl<>(content, pageable, total); //최적화를 위해선 카운트 쿼리 분리가 좋음(카운트업으면 컨텐트 조회안하는거 머 이런거)
+        System.out.println(fetchSizeCheck+"=="+countQuery.fetchCount());
+
+        return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchCount); //만족할때만 카운트 쿼리를 날리는 것.  () -> countQuery.fetchCount()
+//        return new PageImpl<>(content, pageable, total); //최적화를 위해선 카운트 쿼리 분리가 좋음(카운트업으면 컨텐트 조회안하는거 머 이런거)
     }
 }
